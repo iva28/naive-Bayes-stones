@@ -66,10 +66,10 @@ ggplot(data = dataset, mapping = aes(x = energy)) +
   geom_histogram(bins = 30) +
   theme_minimal()
 
-# discretize all variables into 5 bins each
+# discretize all variables into 3 bins each
 discretized.dataset <- discretize(data = dataset[,to.discretize],
                           method = 'quantile',
-                          breaks = 5)
+                          breaks = 3)
 summary(discretized.dataset)
 
 # calculate the difference between the two vectors (with variable names)
@@ -80,3 +80,30 @@ str(discretized.dataset)
 
 # rearranging collumns order
 discretized.dataset <- discretized.dataset[,names(dataset)]
+
+# creating training and test sets
+library(caret)
+set.seed(1)
+train.indices <- createDataPartition(discretized.dataset$OnChart, p = 0.8, list = FALSE)
+train.data <- discretized.dataset[train.indices,]
+test.data <- discretized.dataset[-train.indices,]
+
+# Firstly we will create the model with the most important predictor variables and the default threshold
+library(e1071)
+nb1 <- naiveBayes(OnChart ~ `Album type`+liveness+energy+danceability, data = train.data)
+# printing the model
+nb1
+
+# making the predictions with nb1 model over the test dataset
+nb1.pred <- predict(nb1, newdata = test.data, type = 'class')
+# print several predictions
+head(nb1.pred)
+# creating the confusion matrix
+nb1.cm <- table(true = test.data$OnChart, predicted = nb1.pred)
+nb1.cm
+
+# evaluating classification metrics, 'No' class is positive class( the song hasn't been on any charts)
+nb1.eval <- compute.eval.metrics(nb1.cm)
+nb1.eval
+# Accuracy is 74.5%, precision is 80%, recall is 88.8% and F1 is 84.2%
+
