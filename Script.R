@@ -107,3 +107,14 @@ nb1.eval <- compute.eval.metrics(nb1.cm)
 nb1.eval
 # Accuracy is 74.5%, precision is 80%, recall is 88.8% and F1 is 84.2%
 
+# finding the best probability threshold with ROC curve
+
+# computing probabilities for each class value for the observations in the test set
+nb1.pred.prob <- predict(nb1, newdata = test.data, type = "raw") 
+nb1.pred.prob
+
+library(pROC)
+nb1.roc <- roc(response = as.numeric(test.data$OnChart),
+               predictor = nb1.pred.prob[,1],
+               levels = c(2, 1))
+plot.roc(nb1.roc)
