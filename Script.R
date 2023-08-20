@@ -99,7 +99,8 @@ nb1.pred <- predict(nb1, newdata = test.data, type = 'class')
 # print several predictions
 head(nb1.pred)
 # creating the confusion matrix
-nb1.cm <- table(true = test.data$OnChart, predicted = nb1.pred)
+nb1.cm <- t
+able(true = test.data$OnChart, predicted = nb1.pred)
 nb1.cm
 
 # evaluating classification metrics, 'No' class is positive class( the song hasn't been on any charts)
@@ -117,4 +118,37 @@ library(pROC)
 nb1.roc <- roc(response = as.numeric(test.data$OnChart),
                predictor = nb1.pred.prob[,1],
                levels = c(2, 1))
-plot.roc(nb1.roc)
+# predictor parameter is the probabilities of the 'No' value of the outcome variable since it is the positive class in this instance
+
+# AUC - Area under the curve value
+nb1.roc$auc
+# AUC is 0.744 meaning that the classifier has 74.4% chance to distinguish between the positive class( 'No' class) and the negative class
+
+# plotting the ROC curve
+plot.roc(nb1.roc, print.thres = TRUE, prin.thres.best.method = 'youden')
+# youden method finds the sum that maximizes the sum of sensitivity and specificity
+
+# the coordinates of all local maximus
+nb1.coords <- coords(nb1.roc, ret = c('accuracy','spec','sens','thr'),
+                     x = 'local maximas', transpose = F)
+nb1.coords
+
+# threshold value that maximizes sensitivity 
+prob.treshold <- nb1.coords[1,4]
+
+nb1.pred2 <- as.factor( ifelse(test = nb1.pred.prob[,1] >= prob.treshold, yes = 'No', no = 'Yes'))
+
+# creating the confusion matrix for the new predictions
+nb1.cm2 <- table(true = test.data$OnChart, predicted = nb1.pred2)
+nb1.cm2
+
+# computing the evaluation metrics for the new predictions
+nb1.eval2 <- compute.eval.metrics(nb1.cm2)
+nb1.eval2
+
+# comparing the evaluation metrics for both threshold values
+eval.compare <- rbind(nb1.eval, nb1.eval2)
+eval.compare
+
+# Second model has better values for all metrics
+# Accuracy is 81.3%, Precision is 80.35%, Recall is 100% and F1 is 89.1%
